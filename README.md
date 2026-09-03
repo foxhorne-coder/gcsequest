@@ -25,3 +25,9 @@ The Firestore rules allow each signed-in user to read their own user document da
 
 ## Note on past papers
 GCSEQuest links to AQA's official past-paper resources instead of copying AQA exam PDFs onto the site.
+
+## GCSEQuest 2.2 updates
+- Restyled themes use shared CSS variables so text and surfaces remain readable across themes.
+- Personalisation is now a polished modal with live preview, Cancel, and Save changes.
+- Added three built-in looping WAV ambience tracks under `sounds/`: rain, ocean waves, and study ambience.
+- Sound selection previews immediately and uses normal HTML audio instead of generated oscillator tones.
