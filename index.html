@@ -106,13 +106,54 @@ function startTest(id,topic){
 }
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function finishTest(score,total,id){
- if(quizTimer)clearInterval(quizTimer); const xp=score*100;state.xp+=xp;state.tests++;state.best=Math.max(state.best,score/total);save();if(window.gqSaveProgress)window.gqSaveProgress();
+ if(quizTimer)clearInterval(quizTimer); const xp=score*100;state.xp+=xp;state.tests++;state.best=Math.max(state.best,score/total);save();if(window.gqRecordTest)window.gqRecordTest(xp,id);else if(window.gqSaveProgress)window.gqSaveProgress();
  app.innerHTML=`<section class="result"><div class="pill">TEST COMPLETE</div><h1>${score}/${total}</h1><div class="xp">+${xp} XP</div><p>${score===total?'Perfect score. 🔥':score/total>=.7?'Great work. Keep pushing.':'Good attempt. Revise the weak areas and try again.'}</p><button class="primary" onclick="testsPage()">Another test</button><button class="ghost" onclick="leaderboard()">Scoreboard</button></section>`;
 }
+let leaderboardMode='all';
 function leaderboard(){
- const local=[['You',state.xp],['Alex',1850],['Sam',1620],['Jamie',1430],['Taylor',1210],['Morgan',980]].sort((a,b)=>b[1]-a[1]);
- app.innerHTML=`<section class="head"><div class="pill">COMPETITION</div><h1>🏆 Scoreboard</h1><p>Demo leaderboard. Your score is real on this device. Connect Firebase to make accounts and scores shared online.</p></section><div class="board">${local.map((r,i)=>`<div class="row"><b>#${i+1}</b><span>${esc(r[0])}${r[0]==='You'?' <small>(you)</small>':''}</span><strong>${r[1].toLocaleString()} XP</strong></div>`).join('')}</div><div class="panel note"><b>Want a real global leaderboard?</b><p>The Firebase starter files below let you replace the demo with authenticated users and Firestore scores.</p></div>`;
+ const tabs=[['all','🌍 Global'],['week','📅 This Week'],['biology','🧬 Biology'],['chemistry','⚗️ Chemistry'],['physics','⚡ Physics'],['maths','📐 Maths'],['further-maths','∑ Further Maths']];
+ app.innerHTML=`<section class="head"><div class="pill">COMPETITION</div><h1>🏆 Scoreboard</h1><p>A real GCSEQuest leaderboard. Only signed-in accounts with XP appear here.</p></section><div class="boardControls">${tabs.map(([k,l])=>`<button class="boardTab ${leaderboardMode===k?'active':''}" onclick="loadLeaderboard('${k}')">${l}</button>`).join('')}</div><div id="leaderboardArea"><div class="panel"><h3>Loading leaderboard…</h3><p>Fetching the latest scores.</p></div></div><section class="panel friendFinder"><div><span class="eyebrow">FRIENDS</span><h2>🔎 Find your friends</h2><p>Search public GCSEQuest profiles by display name. Email addresses are never shown.</p></div><div class="friendSearch"><input id="friendSearchInput" placeholder="Search a name…" autocomplete="off" onkeydown="if(event.key==='Enter')searchFriends()"><button class="primary" onclick="searchFriends()">Search</button></div><div id="friendResults"></div><div id="socialArea"><p class="searchHint">Sign in to see your friends and friend requests.</p></div></section>`;
+ loadLeaderboard(leaderboardMode); loadSocial();
 }
+async function loadLeaderboard(mode='all'){
+ leaderboardMode=mode;
+ document.querySelectorAll('.boardTab').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')===`loadLeaderboard('${mode}')`));
+ const area=document.getElementById('leaderboardArea'); if(!area)return;
+ area.innerHTML='<div class="panel"><h3>Loading leaderboard…</h3><p>Fetching the latest scores.</p></div>';
+ try{
+   if(!window.gqGetLeaderboard)throw new Error('Firebase leaderboard is not ready');
+   const rows=await window.gqGetLeaderboard(mode);
+   if(!rows.length){area.innerHTML='<div class="panel"><h3>No scores yet</h3><p>Be one of the first people to earn XP.</p></div>';return;}
+   const uid=window.gqGoogleUser?.uid; const rank=uid?rows.findIndex(x=>x.uid===uid)+1:0;
+   area.innerHTML=`<div class="board">${rows.slice(0,50).map((r,i)=>`<div class="row ${r.uid===uid?'youRow':''}"><b>#${i+1}</b><div class="leaderPerson">${r.photoURL?`<img src="${esc(r.photoURL)}" alt="">`:'<span class="avatarTiny">👤</span>'}<span>${esc(r.displayName)}${r.uid===uid?' <small>(you)</small>':''}</span></div><strong>${Number(r.score).toLocaleString()} XP</strong></div>`).join('')}</div>${rank>50?`<div class="panel yourRank"><b>Your rank</b><strong>#${rank} · ${Number(rows[rank-1].score).toLocaleString()} XP</strong></div>`:''}`;
+ }catch(e){console.error(e);area.innerHTML='<div class="panel"><h3>Leaderboard unavailable</h3><p>Please sign in with Google and make sure Firebase is connected.</p><button class="primary" onclick="profile()">Sign in</button></div>';}
+}
+async function searchFriends(){
+ const input=document.getElementById('friendSearchInput'),out=document.getElementById('friendResults'); if(!input||!out)return;
+ const q=input.value.trim(); if(q.length<2){out.innerHTML='<p class="searchHint">Enter at least 2 characters.</p>';return;}
+ out.innerHTML='<p class="searchHint">Searching…</p>';
+ try{const results=await window.gqSearchUsers(q);if(!results.length){out.innerHTML='<p class="searchHint">No public profiles found.</p>';return;}
+   out.innerHTML=`<div class="friendResults">${results.slice(0,12).map(u=>`<article class="friendResult"><div class="leaderPerson">${u.photoURL?`<img src="${esc(u.photoURL)}" alt="">`:'<span class="avatarTiny">👤</span>'}<div><b>${esc(u.displayName)}</b><small>${Number(u.xp||0).toLocaleString()} XP</small></div></div><button class="ghost" onclick="viewPublicProfile('${esc(u.uid)}')">View profile</button></article>`).join('')}</div>`;
+ }catch(e){console.error(e);out.innerHTML='<p class="searchHint">Search is unavailable right now. Try again after signing in.</p>';}
+}
+async function viewPublicProfile(uid){
+ try{const u=await window.gqGetPublicProfile(uid);if(!u)return toast('Profile not found');
+   const isMe=window.gqGoogleUser?.uid===uid;
+   app.innerHTML=`<section class="head"><div class="pill">PUBLIC PROFILE</div><h1>${esc(u.displayName||'Student')}</h1><p>Public GCSEQuest profile — no email address is displayed.</p></section><section class="publicProfileGrid"><article class="panel publicProfileCard"><div class="avatarLarge">${u.photoURL?`<img src="${esc(u.photoURL)}" alt="">`:'👤'}</div><h2>${esc(u.displayName||'Student')}</h2><div class="profileStats"><span><b>${Number(u.xp||0).toLocaleString()}</b>XP</span><span><b>#${u.rank||'—'}</b>Global rank</span></div>${isMe?'<span class="youBadge">This is you</span>':`<button class="primary" onclick="sendFriendRequest('${esc(uid)}')">➕ Add friend</button>`}<button class="ghost" onclick="leaderboard()">← Back to scoreboard</button></article></section>`;
+ }catch(e){console.error(e);toast('Could not open profile');}
+}
+async function sendFriendRequest(uid){
+ if(!window.gqGoogleUser){toast('Sign in to add friends');return;}
+ try{await window.gqSendFriendRequest(uid);toast('Friend request sent ✓');await loadSocial();}catch(e){console.error(e);toast(e.message||'Could not send friend request');}
+}
+async function loadSocial(){
+ const area=document.getElementById('socialArea'); if(!area||!window.gqGetSocial)return;
+ if(!window.gqGoogleUser){area.innerHTML='<p class="searchHint">Sign in to see your friends and friend requests.</p>';return;}
+ try{const data=await window.gqGetSocial();
+   area.innerHTML=`<div class="socialGrid"><div><h3>Friend requests ${data.incoming.length?`(${data.incoming.length})`:''}</h3>${data.incoming.length?data.incoming.map(r=>`<div class="friendResult"><div><b>${esc(r.senderName||'Student')}</b><small>Wants to be your friend</small></div><button class="primary" onclick="acceptFriendRequest('${esc(r.id)}')">Accept</button></div>`).join(''):'<p class="searchHint">No new requests.</p>'}</div><div><h3>Your friends ${data.friends.length?`(${data.friends.length})`:''}</h3>${data.friends.length?data.friends.map(f=>`<div class="friendResult"><div><b>${esc(f.displayName||'Student')}</b><small>${Number(f.xp||0).toLocaleString()} XP</small></div><button class="ghost" onclick="viewPublicProfile('${esc(f.uid)}')">View</button></div>`).join(''):'<p class="searchHint">No friends yet.</p>'}</div></div>`;
+ }catch(e){console.error(e);area.innerHTML='<p class="searchHint">Friends are temporarily unavailable.</p>';}
+}
+async function acceptFriendRequest(id){try{await window.gqAcceptFriendRequest(id);toast('Friend added ✓');await loadSocial();}catch(e){console.error(e);toast(e.message||'Could not accept request');}}
 function dashboard(){
  const total=totalSubs(),done=Object.values(state.progress).filter(Boolean).length,pct=total?Math.round(done/total*100):0;
  const subjectStats=Object.entries(DATA.subjects).map(([id,s])=>{let all=s.topics.reduce((a,t)=>a+t[1].length,0),d=0;s.topics.forEach((t,ti)=>t[1].forEach((_,si)=>{if(state.progress[id+'-'+ti+'-'+si])d++}));return [id,s,all,d,all?Math.round(d/all*100):0]});
@@ -136,7 +177,7 @@ function openPersonalise(){
  const densityOptions=[['comfortable','Comfortable'],['compact','Compact']];
  const animOptions=[['on','On'],['off','Off']];
  const yearOptions=[['10','Year 10'],['11','Year 11']];
- const soundOptions=[['off','Off','No sound'],['study','Study ambience','Soft room ambience'],['rain','Rain','Natural rainfall'],['plane','Plane','Aircraft cabin ambience']];
+ const soundOptions=[['off','Off','No sound'],['study','Study ambience','Soft room tone'],['rain','Rain','Natural rainfall'],['waves','Plane','Aircraft ambience']];
  const choice=(group,opts,current,labels=false)=>opts.map(o=>`<button type="button" class="choice ${String(current)===o[0]?'selected':''}" data-group="${group}" data-value="${o[0]}" onclick="pickSetting(this)"><b>${esc(o[1])}</b>${labels&&o[2]?`<small>${esc(o[2])}</small>`:''}</button>`).join('');
  const modal=document.createElement('div');modal.id='personaliseModal';modal.className='modalBackdrop';modal.innerHTML=`<div class="settingsModal" role="dialog" aria-modal="true"><div class="modalTop"><div><span class="eyebrow">PERSONALISATION</span><h2>Make GCSEQuest yours</h2></div><button class="closeModal" onclick="closePersonalise()" aria-label="Close">×</button></div><div class="modalBody">
  <section class="modalSection"><h3>Colour scheme</h3><div class="choiceGrid themeChoices">${choice('theme',themeOptions,settings.theme,true)}</div></section>
@@ -172,68 +213,39 @@ function changeSound(v){settings.sound=v;applySettings(false);playStudySound();m
 function playStudySound(){
  if(studyAudio){studyAudio.stop();studyAudio=null;}
  if(settings.sound==='off')return;
- const files={study:'sounds/study-ambience.wav',rain:'sounds/rain.wav',plane:'sounds/plane.wav'};
+ const files={study:'sounds/study-ambience.wav',rain:'sounds/rain.wav',waves:'sounds/plane.wav'};
  const src=files[settings.sound];if(!src)return;
  const audio=new Audio(src);audio.loop=true;audio.volume=Math.max(0,Math.min(1,Number(settings.volume)||0));audio.preload='auto';
  const p=audio.play();if(p&&p.catch)p.catch(e=>{console.warn('Audio playback blocked',e);toast('Tap the sound again to start it.');});
- studyAudio={setVolume(v){audio.volume=Math.max(0,Math.min(1,Number(v)||0));},stop(){audio.pause();audio.currentTime=0;},toggle(){if(audio.paused){audio.play().catch(()=>{});}else audio.pause();}};
- toast(`${settings.sound==='rain'?'Rain':settings.sound==='plane'?'Plane':'Study ambience'} started 🎧`); updateFloatingPlayer();
+ studyAudio={setVolume(v){audio.volume=Math.max(0,Math.min(1,Number(v)||0));},stop(){audio.pause();audio.currentTime=0;}};
+ toast(`${settings.sound==='rain'?'Rain':settings.sound==='waves'?'Plane':'Study ambience'} started 🎧`);
 }
 function changeThemeQuick(theme){settings.theme=theme;applySettings(false);profile();}
 
-/* Floating study player */
-let floatingPlayer=null;
-function ensureFloatingPlayer(){
-  if(floatingPlayer) return floatingPlayer;
-  const el=document.createElement('div');
-  el.id='floatingPlayer'; el.className='floatingPlayer';
-  el.innerHTML=`<div class="fpHead"><button class="fpDrag" type="button" aria-label="Drag music player"><span>⠿</span></button><div class="fpTitle"><span class="fpIcon">🎧</span><span id="fpName">Study ambience</span></div><button class="fpClose" type="button" aria-label="Close music player">×</button></div><div class="fpControls"><button id="fpPrev" type="button" aria-label="Previous sound">‹</button><button id="fpPlay" class="fpPlay" type="button" aria-label="Play or pause">▶</button><button id="fpNext" type="button" aria-label="Next sound">›</button></div><div class="fpBottom"><span>🔊</span><input id="fpVolume" type="range" min="0" max="1" step="0.05" value="${settings.volume||.35}" aria-label="Volume"><span id="fpPct">${Math.round((settings.volume||.35)*100)}%</span></div><div class="fpResize" aria-hidden="true"></div>`;
-  document.body.appendChild(el); floatingPlayer=el;
-  const sounds=['off','study','rain','plane'];
-  const labels={off:'Off',study:'Study ambience',rain:'Rain',plane:'Plane'};
-  function sync(){
-    const name=el.querySelector('#fpName'); if(name) name.textContent=labels[settings.sound]||'Study ambience';
-    const playing=!!studyAudio && settings.sound!=='off'; const b=el.querySelector('#fpPlay'); if(b) b.textContent=playing?'❚❚':'▶';
-    const vol=el.querySelector('#fpVolume'); if(vol) vol.value=settings.volume||0; const pct=el.querySelector('#fpPct'); if(pct) pct.textContent=Math.round((settings.volume||0)*100)+'%';
-    el.classList.toggle('muted',settings.sound==='off');
-  }
-  el.querySelector('.fpClose').onclick=()=>{el.classList.add('hidden');};
-  el.querySelector('#fpPlay').onclick=()=>{if(settings.sound==='off'){settings.sound='study';playStudySound();}else if(studyAudio){studyAudio.toggle?studyAudio.toggle():playStudySound();}else playStudySound();sync();};
-  el.querySelector('#fpPrev').onclick=()=>{let i=sounds.indexOf(settings.sound);i=(i-1+sounds.length)%sounds.length;settings.sound=sounds[i];if(settings.sound==='off') {if(studyAudio){studyAudio.stop();studyAudio=null;}} else playStudySound();sync();};
-  el.querySelector('#fpNext').onclick=()=>{let i=sounds.indexOf(settings.sound);i=(i+1)%sounds.length;settings.sound=sounds[i];if(settings.sound==='off') {if(studyAudio){studyAudio.stop();studyAudio=null;}} else playStudySound();sync();};
-  el.querySelector('#fpVolume').oninput=e=>{settings.volume=Number(e.target.value);if(studyAudio)studyAudio.setVolume(settings.volume);sync();save();};
-  makeFloatingDraggable(el); makeFloatingResizable(el); sync(); return el;
-}
-function updateFloatingPlayer(){const el=ensureFloatingPlayer();el.classList.remove('hidden');const n=el.querySelector('#fpName');const labels={off:'Off',study:'Study ambience',rain:'Rain',plane:'Plane'};if(n)n.textContent=labels[settings.sound]||'Study ambience';const b=el.querySelector('#fpPlay');if(b)b.textContent=studyAudio?'❚❚':'▶';const v=el.querySelector('#fpVolume');if(v)v.value=settings.volume||0;const pct=el.querySelector('#fpPct');if(pct)pct.textContent=Math.round((settings.volume||0)*100)+'%';}
-function makeFloatingDraggable(el){
-  const handle=el.querySelector('.fpDrag'); let sx=0,sy=0,sl=0,st=0,moving=false;
-  const start=e=>{moving=true;const pt=e.touches?e.touches[0]:e;sx=pt.clientX;sy=pt.clientY;const r=el.getBoundingClientRect();sl=r.left;st=r.top;el.style.right='auto';el.style.bottom='auto';el.style.left=sl+'px';el.style.top=st+'px';e.preventDefault();};
-  const move=e=>{if(!moving)return;const pt=e.touches?e.touches[0]:e;el.style.left=Math.max(6,Math.min(window.innerWidth-el.offsetWidth-6,sl+pt.clientX-sx))+'px';el.style.top=Math.max(6,Math.min(window.innerHeight-el.offsetHeight-6,st+pt.clientY-sy))+'px';};
-  const end=()=>{if(moving){moving=false;localStorage.setItem('gq_fp_pos',JSON.stringify({left:el.offsetLeft,top:el.offsetTop}));}};
-  handle.addEventListener('pointerdown',start);window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);
-}
-function makeFloatingResizable(el){
-  const grip=el.querySelector('.fpResize'); let sx=0,sy=0,sw=0,sh=0,resizing=false;
-  grip.addEventListener('pointerdown',e=>{resizing=true;sx=e.clientX;sy=e.clientY;sw=el.offsetWidth;sh=el.offsetHeight;el.setPointerCapture?.(e.pointerId);e.preventDefault();});
-  grip.addEventListener('pointermove',e=>{if(!resizing)return;el.style.width=Math.max(220,Math.min(420,sw+e.clientX-sx))+'px';el.style.height=Math.max(125,Math.min(360,sh+e.clientY-sy))+'px';});
-  grip.addEventListener('pointerup',()=>{resizing=false;localStorage.setItem('gq_fp_size',JSON.stringify({width:el.offsetWidth,height:el.offsetHeight}));});
-}
-function restoreFloatingPlayer(){const el=ensureFloatingPlayer();try{const pos=JSON.parse(localStorage.getItem('gq_fp_pos')||'null');if(pos){el.style.left=Math.max(6,Math.min(window.innerWidth-el.offsetWidth-6,pos.left))+'px';el.style.top=Math.max(6,Math.min(window.innerHeight-el.offsetHeight-6,pos.top))+'px';el.style.right='auto';el.style.bottom='auto';}const size=JSON.parse(localStorage.getItem('gq_fp_size')||'null');if(size){el.style.width=Math.max(220,Math.min(420,size.width))+'px';el.style.height=Math.max(125,Math.min(360,size.height))+'px';}}catch(e){}if(settings.sound==='off')el.classList.add('hidden');}
-window.addEventListener('resize',()=>{if(floatingPlayer){const r=floatingPlayer.getBoundingClientRect();if(r.right>innerWidth)floatingPlayer.style.left=Math.max(6,innerWidth-r.width-6)+'px';if(r.bottom>innerHeight)floatingPlayer.style.top=Math.max(6,innerHeight-r.height-6)+'px';}});
-
-restoreFloatingPlayer();
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-import {getFirestore,doc,setDoc,getDoc} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import {getFirestore,doc,setDoc,getDoc,getDocs,collection,query,where,limit,updateDoc} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
 let auth=null,db=null,ready=false;
-try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);db=getFirestore(appFb);ready=true;onAuthStateChanged(auth,async u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';if(u){try{const snap=await getDoc(doc(db,'users',u.uid));if(snap.exists()){const d=snap.data();if(d.progress)state.progress={...state.progress,...d.progress};if(d.settings)settings={...settings,...d.settings};save();applySettings(false);}}catch(e){console.warn('Could not load saved progress',e);}if(document.querySelector('.authChoices'))profile();}});}catch(e){console.error(e);}
+const weekKey=()=>{const d=new Date(),one=new Date(Date.UTC(d.getUTCFullYear(),0,1));return `${d.getUTCFullYear()}-W${Math.ceil((((d-one)/86400000)+one.getUTCDay()+1)/7)}`;};
+const cleanName=u=>String(u?.displayName||'Student').trim().slice(0,60)||'Student';
+async function syncPublic(u,extra={}){if(!u||!db)return;const payload={displayName:cleanName(u),photoURL:u.photoURL||'',xp:Number(state.xp)||0,updatedAt:Date.now()};if('weeklyXP' in extra)payload.weeklyXP=Number(extra.weeklyXP)||0;if('weekKey' in extra)payload.weekKey=extra.weekKey||weekKey();if('subjectXP' in extra)payload.subjectXP=extra.subjectXP||{};await setDoc(doc(db,'publicUsers',u.uid),payload,{merge:true});}
+try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);db=getFirestore(appFb);ready=true;onAuthStateChanged(auth,async u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';if(u){try{const snap=await getDoc(doc(db,'users',u.uid));if(snap.exists()){const d=snap.data();if(d.progress)state.progress={...state.progress,...d.progress};if(d.settings)settings={...settings,...d.settings};if(typeof d.xp==='number')state.xp=d.xp;if(typeof d.tests==='number')state.tests=d.tests;if(typeof d.best==='number')state.best=d.best;save();applySettings(false);await syncPublic(u,{weeklyXP:d.weeklyXP,weekKey:d.weekKey,subjectXP:d.subjectXP});}else{await setDoc(doc(db,'users',u.uid),{displayName:cleanName(u),xp:Number(state.xp)||0,weeklyXP:0,weekKey:weekKey(),subjectXP:{},progress:state.progress||{},tests:state.tests||0,best:state.best||0,settings,updatedAt:Date.now()},{merge:true});await syncPublic(u);}}catch(e){console.warn('Could not load saved progress',e);}if(document.querySelector('.authChoices'))profile();}});}catch(e){console.error(e);}
 window.signInGoogle=async()=>{if(!ready){toast('Firebase is not configured');return;}try{toast('Opening Google sign-in…');await signInWithPopup(auth,new GoogleAuthProvider());profile();}catch(e){console.error(e);toast(`Google sign-in error: ${e.code||e.message}`);}};
 window.signOutGoogle=async()=>{if(auth)await signOut(auth);profile();};
-window.gqSaveSettings=async()=>{const u=window.gqGoogleUser;if(!u||!db)return;await setDoc(doc(db,'users',u.uid),{displayName:u.displayName||'Student',xp:Number(state.xp)||0,progress:state.progress||{},settings,updatedAt:Date.now()},{merge:true});};
-window.gqSaveProgress=async()=>{const u=window.gqGoogleUser;if(!u||!db)return;try{await setDoc(doc(db,'users',u.uid),{displayName:u.displayName||'Student',xp:Number(state.xp)||0,progress:state.progress,settings,updatedAt:Date.now()},{merge:true});}catch(e){console.warn('Progress sync failed',e);}};
+window.gqSaveSettings=async()=>{const u=window.gqGoogleUser;if(!u||!db)return;const snap=await getDoc(doc(db,'users',u.uid));const d=snap.exists()?snap.data():{};await setDoc(doc(db,'users',u.uid),{displayName:cleanName(u),xp:Number(state.xp)||0,weeklyXP:Number(d.weeklyXP)||0,weekKey:d.weekKey||weekKey(),subjectXP:d.subjectXP||{},progress:state.progress||{},tests:state.tests||0,best:state.best||0,settings,updatedAt:Date.now()},{merge:true});await syncPublic(u,{weeklyXP:d.weeklyXP,weekKey:d.weekKey,subjectXP:d.subjectXP});};
+window.gqSaveProgress=async()=>{const u=window.gqGoogleUser;if(!u||!db)return;try{const old=await getDoc(doc(db,'users',u.uid));const d=old.exists()?old.data():{};await setDoc(doc(db,'users',u.uid),{displayName:cleanName(u),xp:Number(state.xp)||0,weeklyXP:Number(d.weeklyXP)||0,weekKey:d.weekKey||weekKey(),subjectXP:d.subjectXP||{},progress:state.progress,settings,tests:state.tests||0,best:state.best||0,updatedAt:Date.now()},{merge:true});await syncPublic(u,{weeklyXP:d.weeklyXP,weekKey:d.weekKey,subjectXP:d.subjectXP});}catch(e){console.warn('Progress sync failed',e);}};
+window.gqRecordTest=async(xp,subject)=>{const u=window.gqGoogleUser;if(!u||!db)return;try{const ref=doc(db,'users',u.uid),snap=await getDoc(ref),d=snap.exists()?snap.data():{};const wk=weekKey();const weekly=(d.weekKey===wk?Number(d.weeklyXP)||0:0)+Number(xp||0);const subjectXP={...(d.subjectXP||{})};subjectXP[subject]=Number(subjectXP[subject]||0)+Number(xp||0);await setDoc(ref,{displayName:cleanName(u),xp:Number(state.xp)||0,weeklyXP:weekly,weekKey:wk,subjectXP,progress:state.progress||{},tests:state.tests||0,best:state.best||0,settings,updatedAt:Date.now()},{merge:true});await syncPublic(u,{weeklyXP:weekly,weekKey:wk,subjectXP});}catch(e){console.warn('Score sync failed',e);}};
+window.gqGetLeaderboard=async(mode='all')=>{if(!db)throw new Error('Firebase unavailable');const snap=await getDocs(collection(db,'publicUsers'));const wk=weekKey();return snap.docs.map(d=>{const x=d.data()||{};let score=Number(x.xp)||0;if(mode==='week')score=x.weekKey===wk?Number(x.weeklyXP)||0:0;else if(mode!=='all')score=Number((x.subjectXP||{})[mode])||0;return {uid:d.id,displayName:x.displayName||'Student',photoURL:x.photoURL||'',score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);};
+window.gqSearchUsers=async(term)=>{if(!db)throw new Error('Firebase unavailable');const snap=await getDocs(collection(db,'publicUsers'));const t=term.toLowerCase();return snap.docs.map(d=>({uid:d.id,...d.data()})).filter(x=>(x.displayName||'').toLowerCase().includes(t)).sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||'')).slice(0,20);};
+window.gqGetPublicProfile=async(uid)=>{if(!db)throw new Error('Firebase unavailable');const snap=await getDoc(doc(db,'publicUsers',uid));if(!snap.exists())return null;const rows=await window.gqGetLeaderboard('all');const d=snap.data();return {...d,uid,rank:rows.findIndex(x=>x.uid===uid)+1||null};};
+window.gqSendFriendRequest=async(uid)=>{const me=window.gqGoogleUser;if(!me||!db)throw new Error('Sign in first');if(uid===me.uid)throw new Error('You cannot add yourself');const id=[me.uid,uid].sort().join('_');const ref=doc(db,'friendships',id);if((await getDoc(ref)).exists())throw new Error('You are already friends');const requests=await getDocs(query(collection(db,'friendRequests'),where('senderId','==',me.uid),where('receiverId','==',uid),where('status','==','pending'),limit(1)));if(!requests.empty)throw new Error('Request already sent');await setDoc(doc(db,'friendRequests',`${me.uid}_${uid}`),{senderId:me.uid,receiverId:uid,senderName:cleanName(me),status:'pending',createdAt:Date.now()});};
+
+window.gqGetSocial=async()=>{const me=window.gqGoogleUser;if(!me||!db)throw new Error('Sign in first');const incomingSnap=await getDocs(query(collection(db,'friendRequests'),where('receiverId','==',me.uid),where('status','==','pending')));const friendsSnap=await getDocs(query(collection(db,'friendships'),where('members','array-contains',me.uid)));const friends=[];for(const d of friendsSnap.docs){const x=d.data()||{};const uid=(x.members||[]).find(v=>v!==me.uid);if(uid){const ps=await getDoc(doc(db,'publicUsers',uid));if(ps.exists())friends.push({uid,...ps.data()});}}return {incoming:incomingSnap.docs.map(d=>({id:d.id,...d.data()})),friends};};
+window.gqAcceptFriendRequest=async(id)=>{const me=window.gqGoogleUser;if(!me||!db)throw new Error('Sign in first');const req=doc(db,'friendRequests',id),snap=await getDoc(req);if(!snap.exists())throw new Error('Request no longer exists');const r=snap.data();if(r.receiverId!==me.uid)throw new Error('Not your request');const friendshipId=[r.senderId,r.receiverId].sort().join('_');await setDoc(doc(db,'friendships',friendshipId),{members:[r.senderId,r.receiverId],createdAt:Date.now()});await updateDoc(req,{status:'accepted'});};
 </script>
+
 </body>
 </html>
