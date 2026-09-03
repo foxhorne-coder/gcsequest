@@ -105,20 +105,20 @@ function leaderboard(){
  app.innerHTML=`<section class="head"><div class="pill">COMPETITION</div><h1>🏆 Scoreboard</h1><p>Demo leaderboard. Your score is real on this device. Connect Firebase to make accounts and scores shared online.</p></section><div class="board">${local.map((r,i)=>`<div class="row"><b>#${i+1}</b><span>${esc(r[0])}${r[0]==='You'?' <small>(you)</small>':''}</span><strong>${r[1].toLocaleString()} XP</strong></div>`).join('')}</div><div class="panel note"><b>Want a real global leaderboard?</b><p>The Firebase starter files below let you replace the demo with authenticated users and Firestore scores.</p></div>`;
 }
 function profile(){
- const u=window.gqMicrosoftUser;
- if(u){app.innerHTML=`<section class="head"><div class="pill">ACCOUNT</div><h1>Welcome, ${esc(u.displayName||'Student')}</h1><p>Microsoft sign-in is active.</p></section><section class="panel profileCard"><div class="avatar">${esc((u.displayName||'S').slice(0,1).toUpperCase())}</div><h2>${esc(u.displayName||'Student')}</h2><p>Local XP: ${state.xp}</p><button class="ghost" onclick="signOutMicrosoft()">Sign out</button></section>`;return;}
- app.innerHTML=`<section class="head"><div class="pill">ACCOUNT</div><h1>Sign in</h1><p>Use your Microsoft account to sign in.</p></section><section class="authChoices"><button class="microsoftBtn" onclick="signInMicrosoft()"><span>⊞</span> Continue with Microsoft</button><div class="panel"><h3>Account setup</h3><p>Microsoft sign-in uses Firebase Authentication. It needs to be enabled in your Firebase project first.</p></div></section>`;
+ const u=window.gqGoogleUser;
+ if(u){app.innerHTML=`<section class="head"><div class="pill">ACCOUNT</div><h1>Welcome, ${esc(u.displayName||'Student')}</h1><p>Google sign-in is active.</p></section><section class="panel profileCard"><div class="avatar">${esc((u.displayName||'S').slice(0,1).toUpperCase())}</div><h2>${esc(u.displayName||'Student')}</h2><p>Local XP: ${state.xp}</p><button class="ghost" onclick="signOutGoogle()">Sign out</button></section>`;return;}
+ app.innerHTML=`<section class="head"><div class="pill">ACCOUNT</div><h1>Sign in</h1><p>Use your Google account to sign in.</p></section><section class="authChoices"><button class="googleBtn" onclick="signInGoogle()"><span>⊞</span> Continue with Google</button><div class="panel"><h3>Account setup</h3><p>Google sign-in uses Firebase Authentication. It needs to be enabled in your Firebase project first.</p></div></section>`;
 }
 home();
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-import {getAuth,OAuthProvider,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 import {firebaseConfig} from "./firebase-config.js";
 let auth=null,ready=false;
-try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);ready=true;getRedirectResult(auth).catch(()=>{});onAuthStateChanged(auth,u=>{window.gqMicrosoftUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';});}catch(e){console.warn("Firebase is not configured.");}
-window.signInMicrosoft=async()=>{if(!ready){toast('Add your Firebase configuration first');return;}await signInWithRedirect(auth,new OAuthProvider('microsoft.com'));};
-window.signOutMicrosoft=async()=>{if(auth)await signOut(auth);};
+try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);ready=true;getRedirectResult(auth).catch(()=>{});onAuthStateChanged(auth,u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';});}catch(e){console.warn("Firebase is not configured.");}
+window.signInGoogle=async()=>{if(!ready){toast('Add your Firebase configuration first');return;}await signInWithRedirect(auth,new GoogleAuthProvider());};
+window.signOutGoogle=async()=>{if(auth)await signOut(auth);};
 </script>
 </body>
 </html>

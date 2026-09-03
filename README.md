@@ -90,5 +90,5 @@ Add a content object for every subtopic:
 Then the same UI can automatically generate complete lesson pages, flashcards and larger tests.
 
 
-## Interactive + Microsoft update
-Every subtopic now has Learn, Diagram, Interactive, Flashcards and Quick Check sections. Microsoft sign-in is wired to Firebase Authentication using the Microsoft OAuth provider. You must enable Microsoft in Firebase and add the Client ID/Secret; Firebase's current documentation recommends redirect sign-in on mobile. Fox Horne is in the footer.
+## Interactive + Google update
+Every subtopic now has Learn, Diagram, Interactive, Flashcards and Quick Check sections. Google sign-in is wired to Firebase Authentication using the Google provider. Enable Google in Firebase Authentication. Redirect sign-in is used for mobile. Fox Horne is in the footer.
