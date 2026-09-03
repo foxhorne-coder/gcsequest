@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090b16">
+<title>GCSE Quest — AQA Revision</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="toast"></div>
+<header class="nav">
+  <button class="brand" onclick="home()">GCSE<span>Quest</span></button>
+  <div class="navlinks">
+    <button onclick="home()">Home</button><button onclick="subjectsPage()">Subjects</button>
+    <button onclick="testsPage()">Tests</button><button onclick="leaderboard()">🏆 Scoreboard</button>
+  </div>
+  <button class="profileBtn" onclick="profile()">Sign in / Profile</button>
+</header>
+<main id="app"></main>
+<footer><b>GCSEQuest</b><span>AQA revision hub · Built with HTML, CSS & JavaScript</span></footer>
+
+<script>
+const DATA={"subjects": {"biology": {"title": "Biology", "spec": "8461", "icon": "🧬", "topics": [["Cell biology", ["Cell structure", "Cell division", "Transport in cells", "Microscopy"]], ["Organisation", ["Principles of organisation", "Animal tissues, organs and organ systems", "Plant tissues", "Plant organ systems", "The digestive system", "Enzymes"]], ["Infection and response", ["Communicable diseases", "Monoclonal antibodies", "Plant disease", "Human defence systems", "Vaccination and antibiotics"]], ["Bioenergetics", ["Photosynthesis", "Factors affecting photosynthesis", "Respiration", "Response to exercise"]], ["Homeostasis and response", ["Homeostasis", "The nervous system", "The endocrine system", "Control of blood glucose", "Control of water and nitrogenous waste", "Hormones in human reproduction"]], ["Inheritance, variation and evolution", ["Reproduction", "Cell division and genetic material", "Genetic inheritance", "Variation", "Evolution", "Selective breeding", "Genetic engineering", "Fossils and extinction", "Speciation"]], ["Ecology", ["Adaptations and interdependence", "Organisation of an ecosystem", "Biodiversity", "Trophic levels", "Cycles", "Population size", "Food production"]]]}, "chemistry": {"title": "Chemistry", "spec": "8462", "icon": "⚗️", "topics": [["Atomic structure and the periodic table", ["Atoms, elements and compounds", "Mixtures", "Development of the atomic model", "Electronic structure", "The periodic table", "Group 0", "Group 1", "Group 7"]], ["Bonding, structure and properties of matter", ["Chemical bonds", "Ionic bonding", "Ionic compounds", "Covalent bonding", "Small molecules", "Polymers", "Giant covalent structures", "Metallic bonding", "Properties of metals", "States of matter"]], ["Quantitative chemistry", ["Conservation of mass", "Relative formula mass", "Percentage by mass", "Moles", "Equations", "Limiting reactants", "Concentration", "Yield and atom economy"]], ["Chemical changes", ["Reactivity series", "Acids and metals", "Acids and bases", "Making salts", "Electrolysis", "Electrolysis of aqueous solutions"]], ["Energy changes", ["Exothermic reactions", "Endothermic reactions", "Reaction profiles", "Bond energies"]], ["The rate and extent of chemical change", ["Factors affecting rate", "Collision theory", "Catalysts", "Reversible reactions", "Dynamic equilibrium", "Le Chatelier's principle"]], ["Organic chemistry", ["Crude oil", "Fractional distillation", "Hydrocarbons", "Alkanes", "Cracking", "Alkenes", "Alcohols", "Carboxylic acids"]], ["Chemical analysis", ["Pure substances", "Formulations", "Chromatography", "Gas tests", "Ion tests"]], ["Chemistry of the atmosphere", ["Evolution of the atmosphere", "Greenhouse gases", "Global climate change", "Atmospheric pollutants"]], ["Using resources", ["Earth's resources", "Potable water", "Waste water", "Alternative methods of extracting metals", "Life cycle assessments", "Materials and the Earth's resources"]]]}, "physics": {"title": "Physics", "spec": "8463", "icon": "⚡", "topics": [["Energy", ["Energy stores and systems", "Energy transfers", "Energy efficiency", "Energy resources"]], ["Electricity", ["Current, charge and potential difference", "Resistance", "Series and parallel circuits", "Domestic electricity", "Energy transfers in electrical circuits", "Static electricity"]], ["Particle model of matter", ["Changes of state", "Internal energy", "Specific heat capacity", "Specific latent heat", "Gas pressure and volume"]], ["Atomic structure", ["Atoms and isotopes", "Radioactive decay", "Alpha, beta and gamma radiation", "Nuclear equations", "Half-life", "Nuclear fission and fusion"]], ["Forces", ["Scalars and vectors", "Contact and non-contact forces", "Gravity", "Resultant forces", "Work done", "Elasticity", "Moments", "Pressure", "Motion", "Newton's laws", "Stopping distances", "Momentum"]], ["Waves", ["Wave properties", "Transverse and longitudinal waves", "Reflection and refraction", "Sound", "Electromagnetic waves", "Lenses"]], ["Magnetism and electromagnetism", ["Permanent magnets", "Magnetic fields", "The motor effect", "Electromagnetic induction", "Transformers"]], ["Space physics", ["Solar system", "Stars", "Life cycle of stars", "Orbital motion", "Red-shift and the expanding universe"]]]}, "maths": {"title": "Mathematics", "spec": "8300", "icon": "📐", "topics": [["Number", ["Structure and calculation", "Fractions, decimals and percentages", "Measures and accuracy", "Factors, multiples and primes", "Powers and roots", "Standard form", "Surds", "Estimation"]], ["Algebra", ["Notation, vocabulary and manipulation", "Graphs", "Solving equations and inequalities", "Sequences", "Functions", "Quadratic equations", "Algebraic fractions", "Iteration", "Proof"]], ["Ratio, proportion and rates of change", ["Ratio", "Proportion", "Percentages", "Rates of change", "Compound measures", "Direct and inverse proportion"]], ["Geometry and measures", ["Properties of angles and shapes", "Circles", "Constructions and loci", "Mensuration", "Transformations", "Vectors", "Congruence and similarity", "Trigonometry", "Pythagoras"]], ["Probability", ["Basic probability", "Sample spaces", "Tree diagrams", "Venn diagrams", "Conditional probability"]], ["Statistics", ["Sampling", "Data presentation", "Averages", "Measures of spread", "Scatter diagrams", "Cumulative frequency", "Histograms", "Box plots"]]]}}, "questions": {"biology": [["Cell biology", "Which structure controls movement of substances into and out of a cell?", "Cell membrane", ["Nucleus", "Ribosome", "Cell wall"]], ["Cell biology", "What is the main purpose of mitosis?", "Growth and repair", ["Making gametes", "Digestion", "Photosynthesis"]], ["Cell biology", "Which process moves particles from high to low concentration?", "Diffusion", ["Active transport", "Filtration", "Respiration"]], ["Bioenergetics", "Which gas is a reactant in photosynthesis?", "Carbon dioxide", ["Oxygen", "Nitrogen", "Hydrogen"]], ["Organisation", "What do enzymes do?", "Catalyse biological reactions", ["Store genetic information", "Carry oxygen only", "Make cells divide"]], ["Ecology", "What is a producer?", "An organism that makes its own food", ["An organism that eats plants", "A decomposer", "A predator"]]], "chemistry": [["Atomic structure", "What is the relative charge of a proton?", "+1", ["0", "-1", "+2"]], ["Bonding", "What type of bonding occurs between oppositely charged ions?", "Ionic", ["Metallic", "Covalent", "Hydrogen"]], ["Rates", "What does a catalyst do?", "Increases reaction rate without being used up", ["Increases mass", "Stops every reaction", "Always increases equilibrium yield"]], ["Chemical analysis", "What happens in the test for hydrogen?", "A lit splint gives a squeaky pop", ["Limewater turns cloudy", "A glowing splint relights", "Blue litmus turns red"]], ["Organic chemistry", "What is crude oil?", "A mixture of hydrocarbons", ["A pure hydrocarbon", "A metal ore", "A salt"]], ["Chemical changes", "What happens at the cathode during electrolysis?", "Positive ions gain electrons", ["Negative ions gain electrons", "Atoms lose neutrons", "Molecules evaporate"]]], "physics": [["Energy", "What is the equation linking energy transferred, power and time?", "E = Pt", ["E = P/t", "P = Et", "E = t/P"]], ["Electricity", "What is the unit of current?", "Ampere (A)", ["Volt (V)", "Ohm (Ω)", "Joule (J)"]], ["Forces", "What is the unit of force?", "Newton (N)", ["Watt (W)", "Pascal (Pa)", "Coulomb (C)"]], ["Atomic structure", "Which radiation is most ionising?", "Alpha", ["Beta", "Gamma", "Visible light"]], ["Waves", "Which electromagnetic wave has the highest frequency?", "Gamma rays", ["Radio waves", "Microwaves", "Infrared"]], ["Forces", "What is momentum equal to?", "mass × velocity", ["mass ÷ velocity", "force × distance", "energy ÷ time"]]], "maths": [["Number", "What is 25% as a fraction in its simplest form?", "1/4", ["1/5", "1/3", "2/5"]], ["Algebra", "Solve: 3x = 18", "x = 6", ["x = 3", "x = 9", "x = 21"]], ["Algebra", "What is the gradient of y = 4x + 2?", "4", ["2", "-4", "6"]], ["Probability", "What is the probability of a fair coin landing heads?", "1/2", ["1/4", "1", "2"]], ["Geometry", "A right-angled triangle has sides 3 and 4 around the right angle. What is the hypotenuse?", "5", ["6", "7", "12"]], ["Statistics", "Which average is the middle value when data are ordered?", "Median", ["Mean", "Mode", "Range"]]]}};
+let user=JSON.parse(localStorage.getItem('gq_user')||'null');
+let state=JSON.parse(localStorage.getItem('gq_state')||'{"xp":0,"tests":0,"best":0,"progress":{}}');
+let quizTimer=null;
+
+function save(){localStorage.setItem('gq_state',JSON.stringify(state));}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function toast(x){const t=document.getElementById('toast');t.textContent=x;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function totalSubs(){return Object.values(DATA.subjects).reduce((n,s)=>n+s.topics.reduce((a,t)=>a+t[1].length,0),0);}
+function home(){
+ app.innerHTML=`<section class="hero"><div class="pill">AQA GCSE · 8461 · 8462 · 8463 · 8300</div>
+ <h1>Your GCSEs.<br><em>One place.</em></h1>
+ <p>Learn by topic, practise by subtopic, take timed tests, earn XP and track your progress.</p>
+ <div class="actions"><button class="primary" onclick="subjectsPage()">Start revising →</button><button class="ghost" onclick="testsPage()">Take a test</button></div></section>
+ <section class="stats"><div><b>${totalSubs()}</b><span>subtopics mapped</span></div><div><b>${state.xp}</b><span>your XP</span></div><div><b>${state.tests}</b><span>tests completed</span></div></section>
+ <h2 class="sectionTitle">Choose a subject</h2><section class="subjectGrid">${Object.entries(DATA.subjects).map(([id,s])=>card(id,s)).join('')}</section>
+ <section class="feature"><div><span>01</span><h3>Learn</h3><p>Use topic and subtopic pages as your revision checklist.</p></div><div><span>02</span><h3>Test</h3><p>Choose a topic, subject, difficulty and timer.</p></div><div><span>03</span><h3>Compete</h3><p>Earn XP and climb the scoreboard.</p></div></section>`;
+}
+function card(id,s){return `<article class="subject ${id}"><div class="subjectIcon">${s.icon}</div><small>AQA ${s.spec}</small><h2>${s.title}</h2><p>${s.topics.length} topics · ${s.topics.reduce((a,t)=>a+t[1].length,0)} subtopics</p><button onclick="subjectPage('${id}')">Open →</button></article>`}
+function subjectsPage(){app.innerHTML=`<section class="head"><div class="pill">THE COURSE</div><h1>Subjects</h1><p>Pick a subject, then drill down into topics and subtopics.</p></section><section class="subjectGrid">${Object.entries(DATA.subjects).map(([id,s])=>card(id,s)).join('')}</section>`}
+function subjectPage(id){
+ const s=DATA.subjects[id];
+ app.innerHTML=`<section class="head"><div class="pill">${s.icon} AQA ${s.spec}</div><h1>${s.title}</h1><p>Select a subtopic to revise, or test yourself on a whole topic.</p><button class="primary" onclick="setupTest('${id}','all')">Test whole subject →</button></section>
+ <section class="topics">${s.topics.map((t,i)=>`<article class="topic"><div class="topicNo">${String(i+1).padStart(2,'0')}</div><div><h2>${t[0]}</h2><div class="subchips">${t[1].map((x,j)=>`<button onclick="lesson('${id}',${i},${j})">${x}</button>`).join('')}</div></div><button class="mini" onclick="setupTest('${id}',${i})">Test topic</button></article>`).join('')}</section>`;
+}
+function lesson(id,ti,si){
+ const s=DATA.subjects[id], t=s.topics[ti], sub=t[1][si], key=id+'-'+ti+'-'+si, done=!!state.progress[key];
+ app.innerHTML=`<section class="head"><div class="pill">${s.title} · ${t[0]}</div><h1>${esc(sub)}</h1><p>Revision checklist and exam practice.</p></section>
+ <section class="lessonGrid"><article class="panel"><h2>Core knowledge</h2><p>This is your subtopic workspace. Revise the definitions, processes, equations and required applications in your class notes/textbook, then use the checklist below.</p><ul><li>Can I explain the key terms without notes?</li><li>Can I apply the idea to an unfamiliar question?</li><li>Can I explain common mistakes?</li><li>Can I recall the relevant equation or practical method, where applicable?</li></ul></article>
+ <article class="panel"><h2>Progress</h2><label><input id="done" type="checkbox" ${done?'checked':''}> Mark subtopic as revised</label><button class="primary" onclick="markProgress('${key}')">Save progress</button><button class="ghost" onclick="setupTest('${id}',${ti})">Test this topic →</button></article></section>`;
+}
+function markProgress(k){state.progress[k]=document.getElementById('done').checked;save();toast('Progress saved');}
+function testsPage(){app.innerHTML=`<section class="head"><div class="pill">PRACTICE</div><h1>Tests</h1><p>Build a test from a subject, topic or the entire course.</p></section><section class="testChoices">${Object.entries(DATA.subjects).map(([id,s])=>`<div class="testChoice"><span>${s.icon}</span><div><h2>${s.title}</h2><p>AQA ${s.spec}</p></div><button class="primary" onclick="setupTest('${id}','all')">Build test →</button></div>`).join('')}<div class="testChoice special"><span>🎲</span><div><h2>Mixed GCSE</h2><p>Questions from all four subjects</p></div><button class="primary" onclick="setupTest('mixed','all')">Build test →</button></div></section>`}
+function setupTest(id,topic){
+ const s=id==='mixed'?null:DATA.subjects[id];
+ app.innerHTML=`<section class="head"><div class="pill">TEST BUILDER</div><h1>Build your test</h1><p>${s?s.title:'Mixed GCSE'} · choose your settings.</p>
+ <section class="builder"><label>Number of questions<select id="num"><option>5</option><option>10</option><option>20</option></select></label>
+ <label>Time limit<select id="time"><option value="0">No timer</option><option value="60">1 minute</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option></select></label>
+ <label>Difficulty<select id="diff"><option>Standard</option><option>Foundation</option><option>Higher</option></select></label>
+ <button class="primary" onclick="startTest('${id}','${topic}')">Start test →</button></section></section>`;
+}
+function startTest(id,topic){
+ let pool=id==='mixed'?Object.values(DATA.questions).flat():DATA.questions[id].slice();
+ if(id!=='mixed'&&topic!=='all') pool=pool.filter(q=>q[0].toLowerCase().includes(DATA.subjects[id].topics[topic][0].toLowerCase().split(' ')[0]));
+ if(!pool.length) pool=id==='mixed'?Object.values(DATA.questions).flat():DATA.questions[id];
+ const n=Math.min(+document.getElementById('num').value||5,pool.length); pool=pool.sort(()=>Math.random()-.5).slice(0,n);
+ const secs=+document.getElementById('time').value; let left=secs, index=0,score=0;
+ function render(){
+  if(index>=pool.length){finishTest(score,pool.length,id);return}
+  const q=pool[index], opts=[q[2],...q[3]].sort(()=>Math.random()-.5);
+  app.innerHTML=`<section class="quiz"><div class="quizTop"><span>${index+1} / ${pool.length}</span><span id="timer">${secs?fmt(left):'No timer'}</span></div><div class="bar"><i style="width:${index/pool.length*100}%"></i></div><small>${esc(q[0])}</small><h1>${esc(q[1])}</h1><div class="answers">${opts.map(o=>`<button onclick="answer(this,${JSON.stringify(o===q[2])})">${esc(o)}</button>`).join('')}</div></section>`;
+ }
+ window.answer=(btn,correct)=>{document.querySelectorAll('.answers button').forEach(b=>b.disabled=true);btn.classList.add(correct?'right':'wrong');if(correct)score++;setTimeout(()=>{index++;render()},450)};
+ if(secs){quizTimer=setInterval(()=>{left--;const el=document.getElementById('timer');if(el)el.textContent=fmt(left);if(left<=0){clearInterval(quizTimer);finishTest(score,pool.length,id)}},1000)}
+ render();
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function finishTest(score,total,id){
+ if(quizTimer)clearInterval(quizTimer); const xp=score*100;state.xp+=xp;state.tests++;state.best=Math.max(state.best,score/total);save();
+ app.innerHTML=`<section class="result"><div class="pill">TEST COMPLETE</div><h1>${score}/${total}</h1><div class="xp">+${xp} XP</div><p>${score===total?'Perfect score. 🔥':score/total>=.7?'Great work. Keep pushing.':'Good attempt. Revise the weak areas and try again.'}</p><button class="primary" onclick="testsPage()">Another test</button><button class="ghost" onclick="leaderboard()">Scoreboard</button></section>`;
+}
+function leaderboard(){
+ const local=[['You',state.xp],['Alex',1850],['Sam',1620],['Jamie',1430],['Taylor',1210],['Morgan',980]].sort((a,b)=>b[1]-a[1]);
+ app.innerHTML=`<section class="head"><div class="pill">COMPETITION</div><h1>🏆 Scoreboard</h1><p>Demo leaderboard. Your score is real on this device. Connect Firebase to make accounts and scores shared online.</p></section><div class="board">${local.map((r,i)=>`<div class="row"><b>#${i+1}</b><span>${esc(r[0])}${r[0]==='You'?' <small>(you)</small>':''}</span><strong>${r[1].toLocaleString()} XP</strong></div>`).join('')}</div><div class="panel note"><b>Want a real global leaderboard?</b><p>The Firebase starter files below let you replace the demo with authenticated users and Firestore scores.</p></div>`;
+}
+function profile(){
+ const n=prompt('Choose a display name:',user?.name||'');
+ if(n){user={name:n.trim().slice(0,24)};localStorage.setItem('gq_user',JSON.stringify(user));toast('Profile saved');}
+}
+home();
+</script>
+</body>
+</html>
