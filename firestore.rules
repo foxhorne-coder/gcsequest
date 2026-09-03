@@ -17,6 +17,8 @@ service cloud.firestore {
       allow delete: if owner(userId);
     }
 
+    // Only signed-in users can read public leaderboard/profile data.
+    // No email address is stored in this collection.
     match /publicUsers/{userId} {
       allow read: if signedIn();
       allow create, update: if owner(userId)
@@ -34,7 +36,10 @@ service cloud.firestore {
 
     match /friendRequests/{requestId} {
       allow read: if signedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.senderId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.receiverId is string
+        && request.resource.data.status == 'pending';
       allow update: if signedIn() && resource.data.receiverId == request.auth.uid;
       allow delete: if signedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
     }

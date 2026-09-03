@@ -1,7 +1,17 @@
-# GCSEQuest 2.3
+# GCSEQuest 2.3 — Global Leaderboard + Friends
 
-AQA GCSE revision website with Year 10/11 filtering, revision tracking, Google/Firebase syncing, a real Firebase leaderboard, personalisation, study sounds and past-paper links.
+This version includes:
+- Real Firebase global, weekly and subject leaderboards
+- Public GCSEQuest profiles with XP, rank, tests and revision progress
+- Friend-name search using public display names
+- Friend requests and friends list
+- No public email addresses
+- Google sign-in and cross-device revision progress
 
-Upload the entire contents, including the `sounds` folder, to the GitHub Pages repository. Upload the included `firestore.rules` to Firebase Firestore Rules.
+## Important for existing accounts
+When an existing Google user signs in to this updated version, GCSEQuest automatically creates/updates their public profile in `publicUsers`. This allows another signed-in user to search their display name (for example, `Rod Horne`) and view their public stats.
 
-The leaderboard uses real signed-in account data and does not display email addresses.
+If an existing account does not appear immediately, have that person sign in once on the updated site and then search again.
+
+## Firebase
+Publish the included `firestore.rules` in Firebase Console. The website cannot publish rules automatically.

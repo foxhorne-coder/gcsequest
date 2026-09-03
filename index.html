@@ -139,7 +139,7 @@ async function searchFriends(){
 async function viewPublicProfile(uid){
  try{const u=await window.gqGetPublicProfile(uid);if(!u)return toast('Profile not found');
    const isMe=window.gqGoogleUser?.uid===uid;
-   app.innerHTML=`<section class="head"><div class="pill">PUBLIC PROFILE</div><h1>${esc(u.displayName||'Student')}</h1><p>Public GCSEQuest profile — no email address is displayed.</p></section><section class="publicProfileGrid"><article class="panel publicProfileCard"><div class="avatarLarge">${u.photoURL?`<img src="${esc(u.photoURL)}" alt="">`:'👤'}</div><h2>${esc(u.displayName||'Student')}</h2><div class="profileStats"><span><b>${Number(u.xp||0).toLocaleString()}</b>XP</span><span><b>#${u.rank||'—'}</b>Global rank</span></div>${isMe?'<span class="youBadge">This is you</span>':`<button class="primary" onclick="sendFriendRequest('${esc(uid)}')">➕ Add friend</button>`}<button class="ghost" onclick="leaderboard()">← Back to scoreboard</button></article></section>`;
+   app.innerHTML=`<section class="head"><div class="pill">PUBLIC PROFILE</div><h1>${esc(u.displayName||'Student')}</h1><p>Public GCSEQuest profile — no email address is displayed.</p></section><section class="publicProfileGrid"><article class="panel publicProfileCard"><div class="avatarLarge">${u.photoURL?`<img src="${esc(u.photoURL)}" alt="">`:'👤'}</div><h2>${esc(u.displayName||'Student')}</h2><div class="profileStats"><span><b>${Number(u.xp||0).toLocaleString()}</b>XP</span><span><b>#${u.rank||'—'}</b>Global rank</span><span><b>${Number(u.tests||0)}</b>Tests</span><span><b>${Number(u.progressPct||0)}%</b>Revised</span></div>${isMe?'<span class="youBadge">This is you</span>':`<button class="primary" onclick="sendFriendRequest('${esc(uid)}')">➕ Add friend</button>`}<button class="ghost" onclick="leaderboard()">← Back to scoreboard</button></article></section>`;
  }catch(e){console.error(e);toast('Could not open profile');}
 }
 async function sendFriendRequest(uid){
@@ -231,7 +231,19 @@ import {firebaseConfig} from "./firebase-config.js";
 let auth=null,db=null,ready=false;
 const weekKey=()=>{const d=new Date(),one=new Date(Date.UTC(d.getUTCFullYear(),0,1));return `${d.getUTCFullYear()}-W${Math.ceil((((d-one)/86400000)+one.getUTCDay()+1)/7)}`;};
 const cleanName=u=>String(u?.displayName||'Student').trim().slice(0,60)||'Student';
-async function syncPublic(u,extra={}){if(!u||!db)return;const payload={displayName:cleanName(u),photoURL:u.photoURL||'',xp:Number(state.xp)||0,updatedAt:Date.now()};if('weeklyXP' in extra)payload.weeklyXP=Number(extra.weeklyXP)||0;if('weekKey' in extra)payload.weekKey=extra.weekKey||weekKey();if('subjectXP' in extra)payload.subjectXP=extra.subjectXP||{};await setDoc(doc(db,'publicUsers',u.uid),payload,{merge:true});}
+async function syncPublic(u,extra={}){
+ if(!u||!db)return;
+ const total=typeof totalSubs==='function'?totalSubs():0;
+ const revised=Object.values(state.progress||{}).filter(Boolean).length;
+ const wk=weekKey();
+ const payload={
+  displayName:cleanName(u),photoURL:u.photoURL||'',xp:Number(state.xp)||0,
+  weeklyXP:Number(extra.weeklyXP)||0,weekKey:extra.weekKey||wk,subjectXP:extra.subjectXP||{},
+  tests:Number(state.tests)||0,best:Number(state.best)||0,revisedCount:revised,totalSubtopics:total,
+  progressPct:total?Math.round(revised/total*100):0,updatedAt:Date.now()
+ };
+ await setDoc(doc(db,'publicUsers',u.uid),payload,{merge:true});
+}
 try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);db=getFirestore(appFb);ready=true;onAuthStateChanged(auth,async u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';if(u){try{const snap=await getDoc(doc(db,'users',u.uid));if(snap.exists()){const d=snap.data();if(d.progress)state.progress={...state.progress,...d.progress};if(d.settings)settings={...settings,...d.settings};if(typeof d.xp==='number')state.xp=d.xp;if(typeof d.tests==='number')state.tests=d.tests;if(typeof d.best==='number')state.best=d.best;save();applySettings(false);await syncPublic(u,{weeklyXP:d.weeklyXP,weekKey:d.weekKey,subjectXP:d.subjectXP});}else{await setDoc(doc(db,'users',u.uid),{displayName:cleanName(u),xp:Number(state.xp)||0,weeklyXP:0,weekKey:weekKey(),subjectXP:{},progress:state.progress||{},tests:state.tests||0,best:state.best||0,settings,updatedAt:Date.now()},{merge:true});await syncPublic(u);}}catch(e){console.warn('Could not load saved progress',e);}if(document.querySelector('.authChoices'))profile();}});}catch(e){console.error(e);}
 window.signInGoogle=async()=>{if(!ready){toast('Firebase is not configured');return;}try{toast('Opening Google sign-in…');await signInWithPopup(auth,new GoogleAuthProvider());profile();}catch(e){console.error(e);toast(`Google sign-in error: ${e.code||e.message}`);}};
 window.signOutGoogle=async()=>{if(auth)await signOut(auth);profile();};
