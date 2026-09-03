@@ -123,26 +123,40 @@ function profile(){
  const u=window.gqGoogleUser;
  if(!u){app.innerHTML=`<section class="head"><div class="pill">ACCOUNT</div><h1>Sign in</h1><p>Sign in with Google to keep your revision progress and personalisation across devices.</p></section><section class="authChoices"><button class="googleBtn" onclick="signInGoogle()"><span>G</span> Continue with Google</button><div class="panel"><h3>Why sign in?</h3><p>Your topic progress, XP and personalisation can be linked to your account. You can still browse without signing in.</p></div></section>`;return;}
  const initials=(u.displayName||'S').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+ app.innerHTML=`<section class="head"><div class="pill">PROFILE</div><h1>${esc(u.displayName||'Student')}</h1><p>Your GCSEQuest account keeps your revision progress and personalisation available across devices.</p></section>
+ <section class="profileOverview"><article class="panel profileCard"><div class="avatar">${esc(initials)}</div><h2>${esc(u.displayName||'Student')}</h2><p>${esc(u.email||'Google account')}</p><div class="profileStats"><span><b>${state.xp.toLocaleString()}</b>XP</span><span><b>${state.tests}</b>Tests</span></div><button class="primary" onclick="openPersonalise()">⚙ Personalise GCSEQuest</button><button class="ghost" onclick="dashboard()">My Revision →</button><button class="ghost" onclick="signOutGoogle()">Sign out</button></article>
+ <article class="panel profileWelcome"><span class="eyebrow">YOUR EXPERIENCE</span><h2>Make GCSEQuest yours.</h2><p>Choose a colour scheme, font, display style and study sound. Your settings preview immediately, then Save changes stores them to your account.</p><div class="quickPrefs"><div><b>Theme</b><span>${esc(settings.theme)}</span></div><div><b>Font</b><span>${esc(settings.font)}</span></div><div><b>Sound</b><span>${esc(settings.sound)}</span></div></div><button class="ghost" onclick="openPersonalise()">Open personalisation →</button></article></section>
+ <section class="panel feedback"><h2>Suggest an idea</h2><p>Have an improvement for GCSEQuest?</p><a class="primaryLink" href="mailto:25HorneF@lancing.org.uk?subject=GCSEQuest%20suggestion">Email Fox Horne →</a></section>`;
+}
+function openPersonalise(){
+ closePersonalise();
  const themeOptions=[['cream','Cream & Black','Warm, clean and premium'],['midnight','Midnight','Dark charcoal and silver'],['stone','Stone','Soft grey and cream'],['paper','Paper','Bright white and minimal'],['contrast','High Contrast','Maximum readability']];
  const fontOptions=[['Inter','Inter'],['Arial','Arial'],['Poppins','Poppins'],['Georgia','Georgia'],['Times New Roman','Times New Roman']];
  const modeOptions=[['light','Light'],['dark','Dark'],['auto','System']];
  const densityOptions=[['comfortable','Comfortable'],['compact','Compact']];
  const animOptions=[['on','On'],['off','Off']];
  const yearOptions=[['10','Year 10'],['11','Year 11']];
- const soundOptions=[['off','Off','No sound'],['study','Study','Soft low background tone'],['rain','Rain','Gentle filtered rain'],['waves','Waves','Slow ambient waves']];
+ const soundOptions=[['off','Off','No sound'],['study','Study ambience','Soft room ambience'],['rain','Rain','Natural rainfall'],['plane','Plane','Aircraft cabin ambience']];
  const choice=(group,opts,current,labels=false)=>opts.map(o=>`<button type="button" class="choice ${String(current)===o[0]?'selected':''}" data-group="${group}" data-value="${o[0]}" onclick="pickSetting(this)"><b>${esc(o[1])}</b>${labels&&o[2]?`<small>${esc(o[2])}</small>`:''}</button>`).join('');
- app.innerHTML=`<section class="head"><div class="pill">PROFILE & PERSONALISE</div><h1>${esc(u.displayName||'Student')}</h1><p>Make GCSEQuest feel like yours. Changes preview instantly and are saved to your Google account when you press Save changes.</p></section>
- <section class="profileLayout"><article class="panel profileCard"><div class="avatar">${esc(initials)}</div><h2>${esc(u.displayName||'Student')}</h2><p>${esc(u.email||'Google account')}</p><div class="profileStats"><span><b>${state.xp.toLocaleString()}</b>XP</span><span><b>${state.tests}</b>Tests</span></div><button class="ghost" onclick="dashboard()">My Revision →</button><button class="ghost" onclick="signOutGoogle()">Sign out</button></article>
- <article class="panel settingsPanel">
- <div class="settingsHeader"><div><span class="eyebrow">PERSONALISATION</span><h2>Appearance</h2></div><span id="settingsStatus" class="saveStatus">Not saved</span></div>
- <div class="settingSection"><h3>Colour scheme</h3><div class="choiceGrid themeChoices">${choice('theme',themeOptions,settings.theme,true)}</div></div>
- <div class="settingSection"><h3>Font</h3><div class="choiceGrid fontChoices">${choice('font',fontOptions,settings.font)}</div></div>
- <div class="settingSection"><h3>Display</h3><div class="choiceGrid three">${choice('mode',modeOptions,settings.mode)}${choice('density',densityOptions,settings.density)}${choice('animations',animOptions,settings.animations?'on':'off')}</div></div>
- <div class="settingSection"><h3>Default revision year</h3><div class="choiceGrid two">${choice('defaultYear',yearOptions,String(settings.defaultYear))}</div></div>
- <div class="settingSection"><h3>Study sounds</h3><div class="choiceGrid soundChoices">${choice('sound',soundOptions,settings.sound,true)}</div><div class="volumeLine"><label for="setVolume">Volume</label><input id="setVolume" type="range" min="0" max="1" step="0.05" value="${settings.volume}" oninput="previewVolume(this.value)"><output id="volumeValue">${Math.round(settings.volume*100)}%</output></div><p class="sourceNote">Browser-generated ambience. It starts after you choose a sound and can be stopped at any time.</p></div>
- <button class="primary saveSettingsBtn" onclick="savePersonalSettings()">Save changes</button>
- </article></section>
- <section class="panel feedback"><h2>Suggest an idea</h2><p>Have an improvement for GCSEQuest?</p><a class="primaryLink" href="mailto:25HorneF@lancing.org.uk?subject=GCSEQuest%20suggestion">Email Fox Horne →</a></section>`;
+ const modal=document.createElement('div');modal.id='personaliseModal';modal.className='modalBackdrop';modal.innerHTML=`<div class="settingsModal" role="dialog" aria-modal="true"><div class="modalTop"><div><span class="eyebrow">PERSONALISATION</span><h2>Make GCSEQuest yours</h2></div><button class="closeModal" onclick="closePersonalise()" aria-label="Close">×</button></div><div class="modalBody">
+ <section class="modalSection"><h3>Colour scheme</h3><div class="choiceGrid themeChoices">${choice('theme',themeOptions,settings.theme,true)}</div></section>
+ <section class="modalSection"><h3>Font</h3><div class="choiceGrid fontChoices">${choice('font',fontOptions,settings.font)}</div></section>
+ <section class="modalSection"><h3>Display</h3><div class="choiceGrid three">${choice('mode',modeOptions,settings.mode)}${choice('density',densityOptions,settings.density)}${choice('animations',animOptions,settings.animations?'on':'off')}</div></section>
+ <section class="modalSection"><h3>Default revision year</h3><div class="choiceGrid two">${choice('defaultYear',yearOptions,String(settings.defaultYear))}</div></section>
+ <section class="modalSection"><h3>Study sounds</h3><div class="choiceGrid soundChoices">${choice('sound',soundOptions,settings.sound,true)}</div><div class="volumeLine"><label for="setVolume">Volume</label><input id="setVolume" type="range" min="0" max="1" step="0.05" value="${settings.volume}" oninput="previewVolume(this.value)"><output id="volumeValue">${Math.round(settings.volume*100)}%</output></div><p class="sourceNote">Optional built-in ambience. Tap a sound to preview it.</p></section>
+ </div><div class="modalBottom"><span id="settingsStatus" class="saveStatus">No changes yet</span><button class="ghost" onclick="closePersonalise()">Cancel</button><button class="primary" onclick="savePersonalSettings()">Save changes</button></div></div>`;
+ document.body.appendChild(modal);document.body.classList.add('modalOpen');
+ modal.addEventListener('click',e=>{if(e.target===modal)closePersonalise();});
+}
+function closePersonalise(){const m=document.getElementById('personaliseModal');if(m)m.remove();document.body.classList.remove('modalOpen');}
+function pickSetting(btn){const group=btn.dataset.group,value=btn.dataset.value;settings[group]=group==='defaultYear'?Number(value):group==='animations'?value==='on':value;document.querySelectorAll(`.choice[data-group="${group}"]`).forEach(x=>x.classList.toggle('selected',x===btn));applySettings(false);if(group==='sound')playStudySound();markSettingsDirty();}
+function previewVolume(v){settings.volume=Number(v);const out=document.getElementById('volumeValue');if(out)out.textContent=Math.round(settings.volume*100)+'%';if(studyAudio)studyAudio.setVolume(settings.volume);markSettingsDirty();}
+function markSettingsDirty(){const el=document.getElementById('settingsStatus');if(el){el.textContent='Unsaved changes';el.classList.add('dirty');}}
+async function savePersonalSettings(){
+ applySettings(false);save();
+ const status=document.getElementById('settingsStatus');
+ try{if(window.gqSaveSettings)await window.gqSaveSettings();if(status){status.textContent='Saved ✓';status.classList.remove('dirty');}toast('Changes saved to your account ✓');setTimeout(()=>{closePersonalise();profile();},500);}
+ catch(e){console.error(e);if(status){status.textContent='Saved on this device';status.classList.add('dirty');}toast('Saved on this device — account sync failed');}
 }
 function pickSetting(btn){const group=btn.dataset.group,value=btn.dataset.value;settings[group]=group==='defaultYear'?Number(value):group==='animations'?value==='on':value;document.querySelectorAll(`.choice[data-group="${group}"]`).forEach(x=>x.classList.toggle('selected',x===btn));applySettings(false);if(group==='sound')playStudySound();markSettingsDirty();}
 function previewVolume(v){settings.volume=Number(v);document.getElementById('volumeValue').textContent=Math.round(settings.volume*100)+'%';if(studyAudio)studyAudio.setVolume(settings.volume);markSettingsDirty();}
@@ -158,30 +172,56 @@ function changeSound(v){settings.sound=v;applySettings(false);playStudySound();m
 function playStudySound(){
  if(studyAudio){studyAudio.stop();studyAudio=null;}
  if(settings.sound==='off')return;
- const C=window.AudioContext||window.webkitAudioContext;if(!C){toast('Audio is not supported in this browser');return;}
- const ctx=new C(); const master=ctx.createGain();master.gain.value=Math.max(.0001,settings.volume*.16);master.connect(ctx.destination);
- const bufferSize=ctx.sampleRate*2, buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate), data=buffer.getChannelData(0);
- let last=0; for(let i=0;i<bufferSize;i++){const white=Math.random()*2-1;last=.985*last+.15*white;data[i]=last;}
- const noise=ctx.createBufferSource();noise.buffer=buffer;noise.loop=true;
- const filter=ctx.createBiquadFilter();
- if(settings.sound==='rain'){filter.type='highpass';filter.frequency.value=650;filter.Q.value=.35;}
- else if(settings.sound==='waves'){filter.type='lowpass';filter.frequency.value=420;filter.Q.value=.6;}
- else {filter.type='lowpass';filter.frequency.value=950;filter.Q.value=.25;}
- noise.connect(filter);filter.connect(master);noise.start();
- const nodes=[noise];
- if(settings.sound==='study'){
-   const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=174;g.gain.value=.035;g.connect(master);o.connect(g);o.start();nodes.push(o);
- }
- let lfo=null;
- if(settings.sound==='waves'){
-   lfo=ctx.createOscillator();const lg=ctx.createGain();lfo.frequency.value=.075;lg.gain.value=.10;lfo.connect(lg);lg.connect(master.gain);lfo.start();nodes.push(lfo);
- }
- studyAudio={setVolume(v){master.gain.setTargetAtTime(Math.max(.0001,Number(v)*.16),ctx.currentTime,.03);},stop(){nodes.forEach(n=>{try{n.stop()}catch(_){}});try{ctx.close()}catch(_){} }};
- if(ctx.state==='suspended')ctx.resume();
- toast(`${settings.sound==='rain'?'Rain':settings.sound==='waves'?'Waves':'Study'} sound started 🎧`);
+ const files={study:'sounds/study-ambience.wav',rain:'sounds/rain.wav',plane:'sounds/plane.wav'};
+ const src=files[settings.sound];if(!src)return;
+ const audio=new Audio(src);audio.loop=true;audio.volume=Math.max(0,Math.min(1,Number(settings.volume)||0));audio.preload='auto';
+ const p=audio.play();if(p&&p.catch)p.catch(e=>{console.warn('Audio playback blocked',e);toast('Tap the sound again to start it.');});
+ studyAudio={setVolume(v){audio.volume=Math.max(0,Math.min(1,Number(v)||0));},stop(){audio.pause();audio.currentTime=0;},toggle(){if(audio.paused){audio.play().catch(()=>{});}else audio.pause();}};
+ toast(`${settings.sound==='rain'?'Rain':settings.sound==='plane'?'Plane':'Study ambience'} started 🎧`); updateFloatingPlayer();
 }
 function changeThemeQuick(theme){settings.theme=theme;applySettings(false);profile();}
 
+/* Floating study player */
+let floatingPlayer=null;
+function ensureFloatingPlayer(){
+  if(floatingPlayer) return floatingPlayer;
+  const el=document.createElement('div');
+  el.id='floatingPlayer'; el.className='floatingPlayer';
+  el.innerHTML=`<div class="fpHead"><button class="fpDrag" type="button" aria-label="Drag music player"><span>⠿</span></button><div class="fpTitle"><span class="fpIcon">🎧</span><span id="fpName">Study ambience</span></div><button class="fpClose" type="button" aria-label="Close music player">×</button></div><div class="fpControls"><button id="fpPrev" type="button" aria-label="Previous sound">‹</button><button id="fpPlay" class="fpPlay" type="button" aria-label="Play or pause">▶</button><button id="fpNext" type="button" aria-label="Next sound">›</button></div><div class="fpBottom"><span>🔊</span><input id="fpVolume" type="range" min="0" max="1" step="0.05" value="${settings.volume||.35}" aria-label="Volume"><span id="fpPct">${Math.round((settings.volume||.35)*100)}%</span></div><div class="fpResize" aria-hidden="true"></div>`;
+  document.body.appendChild(el); floatingPlayer=el;
+  const sounds=['off','study','rain','plane'];
+  const labels={off:'Off',study:'Study ambience',rain:'Rain',plane:'Plane'};
+  function sync(){
+    const name=el.querySelector('#fpName'); if(name) name.textContent=labels[settings.sound]||'Study ambience';
+    const playing=!!studyAudio && settings.sound!=='off'; const b=el.querySelector('#fpPlay'); if(b) b.textContent=playing?'❚❚':'▶';
+    const vol=el.querySelector('#fpVolume'); if(vol) vol.value=settings.volume||0; const pct=el.querySelector('#fpPct'); if(pct) pct.textContent=Math.round((settings.volume||0)*100)+'%';
+    el.classList.toggle('muted',settings.sound==='off');
+  }
+  el.querySelector('.fpClose').onclick=()=>{el.classList.add('hidden');};
+  el.querySelector('#fpPlay').onclick=()=>{if(settings.sound==='off'){settings.sound='study';playStudySound();}else if(studyAudio){studyAudio.toggle?studyAudio.toggle():playStudySound();}else playStudySound();sync();};
+  el.querySelector('#fpPrev').onclick=()=>{let i=sounds.indexOf(settings.sound);i=(i-1+sounds.length)%sounds.length;settings.sound=sounds[i];if(settings.sound==='off') {if(studyAudio){studyAudio.stop();studyAudio=null;}} else playStudySound();sync();};
+  el.querySelector('#fpNext').onclick=()=>{let i=sounds.indexOf(settings.sound);i=(i+1)%sounds.length;settings.sound=sounds[i];if(settings.sound==='off') {if(studyAudio){studyAudio.stop();studyAudio=null;}} else playStudySound();sync();};
+  el.querySelector('#fpVolume').oninput=e=>{settings.volume=Number(e.target.value);if(studyAudio)studyAudio.setVolume(settings.volume);sync();save();};
+  makeFloatingDraggable(el); makeFloatingResizable(el); sync(); return el;
+}
+function updateFloatingPlayer(){const el=ensureFloatingPlayer();el.classList.remove('hidden');const n=el.querySelector('#fpName');const labels={off:'Off',study:'Study ambience',rain:'Rain',plane:'Plane'};if(n)n.textContent=labels[settings.sound]||'Study ambience';const b=el.querySelector('#fpPlay');if(b)b.textContent=studyAudio?'❚❚':'▶';const v=el.querySelector('#fpVolume');if(v)v.value=settings.volume||0;const pct=el.querySelector('#fpPct');if(pct)pct.textContent=Math.round((settings.volume||0)*100)+'%';}
+function makeFloatingDraggable(el){
+  const handle=el.querySelector('.fpDrag'); let sx=0,sy=0,sl=0,st=0,moving=false;
+  const start=e=>{moving=true;const pt=e.touches?e.touches[0]:e;sx=pt.clientX;sy=pt.clientY;const r=el.getBoundingClientRect();sl=r.left;st=r.top;el.style.right='auto';el.style.bottom='auto';el.style.left=sl+'px';el.style.top=st+'px';e.preventDefault();};
+  const move=e=>{if(!moving)return;const pt=e.touches?e.touches[0]:e;el.style.left=Math.max(6,Math.min(window.innerWidth-el.offsetWidth-6,sl+pt.clientX-sx))+'px';el.style.top=Math.max(6,Math.min(window.innerHeight-el.offsetHeight-6,st+pt.clientY-sy))+'px';};
+  const end=()=>{if(moving){moving=false;localStorage.setItem('gq_fp_pos',JSON.stringify({left:el.offsetLeft,top:el.offsetTop}));}};
+  handle.addEventListener('pointerdown',start);window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);
+}
+function makeFloatingResizable(el){
+  const grip=el.querySelector('.fpResize'); let sx=0,sy=0,sw=0,sh=0,resizing=false;
+  grip.addEventListener('pointerdown',e=>{resizing=true;sx=e.clientX;sy=e.clientY;sw=el.offsetWidth;sh=el.offsetHeight;el.setPointerCapture?.(e.pointerId);e.preventDefault();});
+  grip.addEventListener('pointermove',e=>{if(!resizing)return;el.style.width=Math.max(220,Math.min(420,sw+e.clientX-sx))+'px';el.style.height=Math.max(125,Math.min(360,sh+e.clientY-sy))+'px';});
+  grip.addEventListener('pointerup',()=>{resizing=false;localStorage.setItem('gq_fp_size',JSON.stringify({width:el.offsetWidth,height:el.offsetHeight}));});
+}
+function restoreFloatingPlayer(){const el=ensureFloatingPlayer();try{const pos=JSON.parse(localStorage.getItem('gq_fp_pos')||'null');if(pos){el.style.left=Math.max(6,Math.min(window.innerWidth-el.offsetWidth-6,pos.left))+'px';el.style.top=Math.max(6,Math.min(window.innerHeight-el.offsetHeight-6,pos.top))+'px';el.style.right='auto';el.style.bottom='auto';}const size=JSON.parse(localStorage.getItem('gq_fp_size')||'null');if(size){el.style.width=Math.max(220,Math.min(420,size.width))+'px';el.style.height=Math.max(125,Math.min(360,size.height))+'px';}}catch(e){}if(settings.sound==='off')el.classList.add('hidden');}
+window.addEventListener('resize',()=>{if(floatingPlayer){const r=floatingPlayer.getBoundingClientRect();if(r.right>innerWidth)floatingPlayer.style.left=Math.max(6,innerWidth-r.width-6)+'px';if(r.bottom>innerHeight)floatingPlayer.style.top=Math.max(6,innerHeight-r.height-6)+'px';}});
+
+restoreFloatingPlayer();
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";

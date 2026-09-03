@@ -7,7 +7,11 @@ service cloud.firestore {
         && request.auth.uid == userId
         && request.resource.data.xp is int
         && request.resource.data.xp >= 0
-        && request.resource.data.xp <= 100000000;
+        && request.resource.data.xp <= 100000000
+        && request.resource.data.weeklyXP is int
+        && request.resource.data.weeklyXP >= 0
+        && request.resource.data.weeklyXP <= 100000000
+        && request.resource.data.subjectXP is map;
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
   }
