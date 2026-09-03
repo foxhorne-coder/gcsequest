@@ -12,8 +12,7 @@
 <header class="nav">
   <button class="brand" onclick="home()">GCSE<span>Quest</span></button>
   <div class="navlinks">
-    <button onclick="home()">Home</button><button onclick="subjectsPage()">Subjects</button>
-    <button onclick="testsPage()">Tests</button><button onclick="leaderboard()">🏆 Scoreboard</button>
+    <button onclick="home()">Home</button><button onclick="yearPage(10)">Year 10</button><button onclick="yearPage(11)">Year 11</button><button onclick="topicsPage()">Topics</button><button onclick="testsPage()">Tests</button><button onclick="pastPapersPage()">Past Papers</button><button onclick="leaderboard()">🏆 Scoreboard</button>
   </div>
   <button class="profileBtn" onclick="profile()">Sign in / Profile</button>
 </header>
@@ -40,18 +39,23 @@ function home(){
  <section class="feature"><div><span>01</span><h3>Learn</h3><p>Use topic and subtopic pages as your revision checklist.</p></div><div><span>02</span><h3>Test</h3><p>Choose a topic, subject, difficulty and timer.</p></div><div><span>03</span><h3>Compete</h3><p>Earn XP and climb the scoreboard.</p></div></section>`;
 }
 function card(id,s){return `<article class="subject ${id}"><div class="subjectIcon">${s.icon}</div><small>AQA ${s.spec}</small><h2>${s.title}</h2><p>${s.topics.length} topics · ${s.topics.reduce((a,t)=>a+t[1].length,0)} subtopics</p><button onclick="subjectPage('${id}')">Open →</button></article>`}
-function subjectsPage(){app.innerHTML=`<section class="head"><div class="pill">THE COURSE</div><h1>Subjects</h1><p>Pick a subject, then drill down into topics and subtopics.</p></section><section class="subjectGrid">${Object.entries(DATA.subjects).map(([id,s])=>card(id,s)).join('')}</section>`}
+function subjectsPage(){app.innerHTML=`<section class="head"><div class="pill">THE COURSE</div><h1>Subjects</h1><p>Pick a subject, then drill down into topics and subtopics.</p><div class="actions"><button class="primary" onclick="yearPage(10)">Year 10 view →</button><button class="ghost" onclick="yearPage(11)">Year 11 view →</button><button class="ghost" onclick="topicsPage()">Revision tracker →</button></div></section><section class="subjectGrid">${Object.entries(DATA.subjects).map(([id,s])=>card(id,s)).join('')}</section>`}
+function suggestedYear(id,i){ if(id==='further-maths') return 11; const split=Math.ceil(DATA.subjects[id].topics.length/2); return i<split?10:11; }
+function yearPage(year){const items=[];Object.entries(DATA.subjects).forEach(([id,s])=>{const topics=s.topics.map((t,i)=>[t,i]).filter(([,i])=>suggestedYear(id,i)===year);if(topics.length)items.push(`<section class="yearBlock"><div class="yearSubject"><span>${s.icon}</span><div><h2>${s.title}</h2><small>AQA ${s.spec} · suggested Year ${year} coverage</small></div><button class="ghost" onclick="subjectPage('${id}')">Full subject →</button></div><div class="yearTopics">${topics.map(([t,i])=>{const done=t[1].filter((_,j)=>state.progress[id+'-'+i+'-'+j]).length;return `<article class="yearTopic"><div><b>${t[0]}</b><span>${done}/${t[1].length} revised</span></div><div class="tinyBar"><i style="width:${t[1].length?done/t[1].length*100:0}%"></i></div><button class="mini" onclick="subjectPage('${id}')">Open →</button></article>`}).join('')}</div></section>`)});app.innerHTML=`<section class="head"><div class="pill">FILTERED COURSE VIEW</div><h1>Year ${year}</h1><p>A quick way to focus on one school year. AQA specifications are linear, so this is a <strong>GCSEQuest suggested split</strong>, not an official AQA Year 10/11 division.</p></section>${items.join('')}`}
+function topicsPage(){const total=totalSubs(),done=Object.values(state.progress).filter(Boolean).length,subjects=Object.entries(DATA.subjects);app.innerHTML=`<section class="head"><div class="pill">REVISION TRACKER</div><h1>Topics</h1><p>See what you've revised, what's in progress and what still needs work.</p><div class="trackerSummary"><div><b>${done}</b><span>revised</span></div><div><b>${total-done}</b><span>not revised</span></div><div><b>${total?Math.round(done/total*100):0}%</b><span>overall</span></div></div></section><div class="filters"><label>Year<select id="topicYear" onchange="renderTracker()"><option value="all">All years</option><option value="10">Year 10</option><option value="11">Year 11</option></select></label><label>Subject<select id="topicSubject" onchange="renderTracker()"><option value="all">All subjects</option>${subjects.map(([id,s])=>`<option value="${id}">${s.title}</option>`).join('')}</select></label><label>Status<select id="topicStatus" onchange="renderTracker()"><option value="all">All</option><option value="done">Revised</option><option value="todo">Not revised</option></select></label></div><div id="trackerList"></div>`;renderTracker()}
+function renderTracker(){const y=document.getElementById('topicYear')?.value||'all',subj=document.getElementById('topicSubject')?.value||'all',status=document.getElementById('topicStatus')?.value||'all';let html='';Object.entries(DATA.subjects).forEach(([id,s])=>{if(subj!=='all'&&subj!==id)return;let rows='';s.topics.forEach((t,ti)=>{const year=suggestedYear(id,ti);if(y!=='all'&&+y!==year)return;t[1].forEach((sub,si)=>{const key=id+'-'+ti+'-'+si,done=!!state.progress[key];if(status==='done'&&!done||status==='todo'&&done)return;rows+=`<div class="trackerRow"><div class="statusDot ${done?'done':''}"></div><div class="trackerName"><b>${esc(sub)}</b><small>${esc(t[0])} · ${s.title} · Year ${year}</small></div><span class="statusText ${done?'done':''}">${done?'REVISED':'NOT REVISED'}</span><button class="mini" onclick="lesson('${id}',${ti},${si})">Open</button></div>`})});if(rows)html+=`<section class="trackerSubject"><h2>${s.icon} ${s.title}</h2>${rows}</section>`});document.getElementById('trackerList').innerHTML=html||'<div class="panel"><h2>No topics match those filters.</h2></div>'}
+
 function subjectPage(id){
  const s=DATA.subjects[id];
  app.innerHTML=`<section class="head"><div class="pill">${s.icon} AQA ${s.spec}</div><h1>${s.title}</h1><p>Select a subtopic to revise, or test yourself on a whole topic.</p><button class="primary" onclick="setupTest('${id}','all')">Test whole subject →</button></section>
- <section class="topics">${s.topics.map((t,i)=>`<article class="topic"><div class="topicNo">${String(i+1).padStart(2,'0')}</div><div><h2>${t[0]}</h2><div class="subchips">${t[1].map((x,j)=>`<button onclick="lesson('${id}',${i},${j})">${x}</button>`).join('')}</div></div><button class="mini" onclick="setupTest('${id}',${i})">Test topic</button></article>`).join('')}</section>`;
+ <section class="topics">${s.topics.map((t,i)=>`<article class="topic"><div class="topicNo">${String(i+1).padStart(2,'0')}</div><div><h2>${t[0]}</h2><div class="subchips">${t[1].map((x,j)=>{const done=!!state.progress[id+'-'+i+'-'+j];return `<button class="${done?'revisedChip':''}" onclick="lesson('${id}',${i},${j})">${done?'✓ ':''}${x}</button>`}).join('')}</div></div><button class="mini" onclick="setupTest('${id}',${i})">Test topic</button></article>`).join('')}</section>`;
 }
 function lesson(id,ti,si){
  const s=DATA.subjects[id],t=s.topics[ti],sub=t[1][si],key=id+'-'+ti+'-'+si,done=!!state.progress[key];
  app.innerHTML=`<section class="head"><div class="pill">${esc(s.title)} · ${esc(t[0])}</div><h1>${esc(sub)}</h1><p>Learn it, explore it, recall it, then test yourself.</p></section>
  <div class="lessonTabs"><button class="tab active" onclick="lessonTab('learn')">📖 Learn</button><button class="tab" onclick="lessonTab('diagram')">🧩 Diagram</button><button class="tab" onclick="lessonTab('interactive')">🎮 Interactive</button><button class="tab" onclick="lessonTab('flashcards')">🧠 Flashcards</button><button class="tab" onclick="lessonTab('check')">✅ Quick check</button></div>
  <section id="lessonContent" class="lessonContent"></section>
- <section class="panel progressPanel"><label><input id="done" type="checkbox" ${done?'checked':''}> Mark this subtopic as revised</label><button class="primary" onclick="markProgress('${key}')">Save progress</button><button class="ghost" onclick="setupTest('${id}',${ti})">Test this topic →</button></section>`;
+ <section class="panel progressPanel"><label><input id="done" type="checkbox" ${done?'checked':''}> Mark this subtopic as revised</label><button class="primary" onclick="markProgress('${key}')">Save progress</button><button class="ghost" onclick="topicsPage()">View revision tracker →</button><button class="ghost" onclick="setupTest('${id}',${ti})">Test this topic →</button></section>`;
  lessonTab('learn');
 }
 function lessonTab(tab){
@@ -70,7 +74,8 @@ function nextLab(){labStep=labStep%4+1;const t=["Recall","Explain","Apply","Exam
 function flipCard(el){el.classList.toggle('flipped')}
 function showRecall(){document.getElementById('checkResult').innerHTML='<div class="revealBox">If you can define it, explain it, apply it and identify a common mistake, you are much closer to mastery.</div>';}
 
-function markProgress(k){state.progress[k]=document.getElementById('done').checked;save();toast('Progress saved');}
+function markProgress(k){state.progress[k]=document.getElementById('done').checked;save();toast(state.progress[k]?'Marked as revised ✓':'Marked as not revised');if(window.gqSaveProgress)window.gqSaveProgress();}
+function pastPapersPage(){const papers=[['biology','🧬','Biology','8461'],['chemistry','⚗️','Chemistry','8462'],['physics','⚡','Physics','8463'],['maths','📐','Mathematics','8300'],['further-maths','∑','Further Mathematics','8365']];app.innerHTML=`<section class="head"><div class="pill">EXAM PRACTICE</div><h1>Past Papers</h1><p>Find official AQA question papers, mark schemes and examiner reports. GCSEQuest links to AQA rather than hosting copied exam PDFs.</p><a class="paperFinder" href="https://www.aqa.org.uk/past-papers-and-mark-schemes-finder" target="_blank" rel="noopener">Open AQA Past Paper Finder ↗</a></section><section class="paperGrid">${papers.map(p=>`<article class="paperCard"><span>${p[1]}</span><h2>${p[2]}</h2><p>AQA ${p[3]}</p><a href="https://www.aqa.org.uk/subjects/${p[0]==='further-maths'?'mathematics/aqa-certificate/mathematics-8365':p[0]+'?utm_source=gcsequest'}" target="_blank" rel="noopener">AQA subject resources ↗</a></article>`).join('')}</section><div class="panel note"><b>What you can find</b><p>Use AQA's finder to filter by subject and exam series. AQA says most past papers and mark schemes remain available online for three years because of copyright restrictions.</p></div>`}
 function testsPage(){app.innerHTML=`<section class="head"><div class="pill">PRACTICE</div><h1>Tests</h1><p>Build a test from a subject, topic or the entire course.</p></section><section class="testChoices">${Object.entries(DATA.subjects).map(([id,s])=>`<div class="testChoice"><span>${s.icon}</span><div><h2>${s.title}</h2><p>AQA ${s.spec}</p></div><button class="primary" onclick="setupTest('${id}','all')">Build test →</button></div>`).join('')}<div class="testChoice special"><span>🎲</span><div><h2>Mixed GCSE</h2><p>Questions from all four subjects</p></div><button class="primary" onclick="setupTest('mixed','all')">Build test →</button></div></section>`}
 function setupTest(id,topic){
  const s=id==='mixed'?null:DATA.subjects[id];
@@ -97,7 +102,7 @@ function startTest(id,topic){
 }
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function finishTest(score,total,id){
- if(quizTimer)clearInterval(quizTimer); const xp=score*100;state.xp+=xp;state.tests++;state.best=Math.max(state.best,score/total);save();
+ if(quizTimer)clearInterval(quizTimer); const xp=score*100;state.xp+=xp;state.tests++;state.best=Math.max(state.best,score/total);save();if(window.gqSaveProgress)window.gqSaveProgress();
  app.innerHTML=`<section class="result"><div class="pill">TEST COMPLETE</div><h1>${score}/${total}</h1><div class="xp">+${xp} XP</div><p>${score===total?'Perfect score. 🔥':score/total>=.7?'Great work. Keep pushing.':'Good attempt. Revise the weak areas and try again.'}</p><button class="primary" onclick="testsPage()">Another test</button><button class="ghost" onclick="leaderboard()">Scoreboard</button></section>`;
 }
 function leaderboard(){
@@ -113,12 +118,14 @@ home();
 </script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {getFirestore,doc,setDoc,getDoc} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
-let auth=null,ready=false;
-try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);ready=true;getRedirectResult(auth).catch(()=>{});onAuthStateChanged(auth,u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';});}catch(e){console.warn("Firebase is not configured.");}
-window.signInGoogle=async()=>{if(!ready){toast('Add your Firebase configuration first');return;}await signInWithRedirect(auth,new GoogleAuthProvider());};
-window.signOutGoogle=async()=>{if(auth)await signOut(auth);};
+let auth=null,db=null,ready=false;
+try{const appFb=initializeApp(firebaseConfig);auth=getAuth(appFb);db=getFirestore(appFb);ready=true;onAuthStateChanged(auth,async u=>{window.gqGoogleUser=u||null;const b=document.querySelector('.profileBtn');if(b)b.textContent=u?`👤 ${u.displayName||'Signed in'}`:'Sign in / Profile';if(u){try{const snap=await getDoc(doc(db,'users',u.uid));if(snap.exists()&&snap.data().progress){state.progress={...state.progress,...snap.data().progress};save();}}catch(e){console.warn('Could not load saved progress',e);}if(document.querySelector('.authChoices'))profile();}});}catch(e){console.error(e);}
+window.signInGoogle=async()=>{if(!ready){toast('Firebase is not configured');return;}try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){console.error(e);toast(`Google sign-in error: ${e.code||e.message}`);}};
+window.signOutGoogle=async()=>{if(auth)await signOut(auth);profile();};
+window.gqSaveProgress=async()=>{const u=window.gqGoogleUser;if(!u||!db)return;try{await setDoc(doc(db,'users',u.uid),{displayName:u.displayName||'Student',xp:Number(state.xp)||0,progress:state.progress,updatedAt:Date.now()},{merge:true});}catch(e){console.warn('Progress sync failed',e);}};
 </script>
 </body>
 </html>
